@@ -62,7 +62,7 @@ export default function ForgotPassword() {
           disabled={isLoading}
         >
           <Text style={styles.buttonText}>
-            {isLoading ? 'Sending...' : 'Reset Password'}
+            {isLoading ? 'Sending...' : 'Send Email'}
           </Text>
         </Pressable>
 

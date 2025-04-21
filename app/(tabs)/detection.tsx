@@ -8,9 +8,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
+  Platform,
+  Dimensions,
+  Modal,
+  ScrollView,
 } from "react-native";
-import { MaterialIcons, FontAwesome5} from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 const API_ENDPOINT = "http://192.168.1.7:5000/obj-detection";
 const GEMINI_API_ENDPOINT = "http://192.168.1.7:5000/gemini-detection";
@@ -19,8 +25,11 @@ const Camera = () => {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [isApiLoading, setIsApiLoading] = useState(false);
-  const [isGeminiLoading, setIsGeminiLoading] = useState(false); 
+  const [isGeminiLoading, setIsGeminiLoading] = useState(false);
+  const [geminiResult, setGeminiResult] = useState<string>("");
+  const [showResults, setShowResults] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  const { theme } = useAppTheme();
 
   if (!permission) {
     // Permissions are still loading
@@ -130,10 +139,8 @@ const Camera = () => {
       });
 
       console.log("Gemini API Response:", response.data.prediction);
-      // const objects =  response.data.prediction && response.data.prediction.length > 0
-      //       ? `Gemini Identified Objects: ${response.data.prediction.join(", ")}`
-      //       : "No objects identifed by Gemini.";
-      // Alert.alert("Gemini Detection", objects); 
+      setGeminiResult(response.data.prediction);
+      setShowResults(true);
     } 
     catch (error) {
       console.error("Gemini API Error:", error);
@@ -148,113 +155,201 @@ const Camera = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <CameraView
-        style={styles.camera}
-        facing={facing}
-        ref={cameraRef}
-      >
-        <View style={styles.flipButtonContainer}>
-          <TouchableOpacity onPress={toggleCameraFacing} style={styles.button}>
-            <MaterialIcons
-              name="flip-camera-ios"
-              size={30}
-              color="white"
-            />
-          </TouchableOpacity>
-        </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <CameraView
+          style={styles.camera}
+          facing={facing}
+          ref={cameraRef}
+        >
+          {/* Camera Controls */}
+          <View style={styles.controlsContainer}>
+            {/* Flip Button */}
+            <TouchableOpacity 
+              onPress={toggleCameraFacing} 
+              style={[styles.controlButton, styles.flipButton]}
+            >
+              <MaterialIcons
+                name="flip-camera-ios"
+                size={30}
+                color="white"
+              />
+            </TouchableOpacity>
 
-        <View style={styles.apiButtonContainer}>
-          <TouchableOpacity 
-            onPress={handleObjectDetection} 
-            style={styles.apiButton} 
-            disabled={isApiLoading}
-          >
-            <MaterialIcons
-              name="api"
-              size={40}
-              color="white"
-            />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.geminiButtonContainer}>
-          <TouchableOpacity 
-            onPress={handleGeminiDetection}
-            style={styles.geminiButton}
-            disabled={isGeminiLoading}
-          >
-            <FontAwesome5 name="robot" size={35} color="white" />
-          </TouchableOpacity>
-        </View>
+            {/* Detection Buttons */}
+            <View style={styles.detectionButtons}>
+              <TouchableOpacity 
+                onPress={handleObjectDetection} 
+                style={[styles.controlButton, styles.apiButton]} 
+                disabled={isApiLoading}
+              >
+                <MaterialIcons
+                  name="api"
+                  size={40}
+                  color="white"
+                />
+              </TouchableOpacity>
 
-
-        {isApiLoading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#ffffff" />
+              <TouchableOpacity 
+                onPress={handleGeminiDetection}
+                style={[styles.controlButton, styles.geminiButton]}
+                disabled={isGeminiLoading}
+              >
+                <FontAwesome5 name="robot" size={35} color="white" />
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
-      </CameraView>
-    </View>
+
+          {/* Loading Indicator */}
+          {(isApiLoading || isGeminiLoading) && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color="#ffffff" />
+            </View>
+          )}
+        </CameraView>
+
+        {/* Results Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showResults}
+          onRequestClose={() => setShowResults(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>
+                  Gemini Analysis
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => setShowResults(false)}
+                  style={styles.closeButton}
+                >
+                  <Ionicons name="close" size={24} color={theme.text} />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.modalScroll}>
+                <Text style={[styles.resultText, { color: theme.text }]}>
+                  {geminiResult}
+                </Text>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 };
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const TAB_BAR_HEIGHT = 65; // Height of your tab bar
+const BOTTOM_SPACE = Platform.OS === 'ios' ? 34 : 20; // Safe area bottom space
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+  },
+  camera: {
+    flex: 1,
+  },
+  controlsContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: Platform.OS === 'ios' ? 90 : 70, // Adjusted to be above tab bar
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  detectionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginTop: 20,
+  },
+  controlButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  flipButton: {
+    alignSelf: 'flex-end',
+  },
+  apiButton: {
+    backgroundColor: 'rgba(0, 150, 136, 0.8)', // Teal color
+  },
+  geminiButton: {
+    backgroundColor: 'rgba(33, 150, 243, 0.8)', // Blue color
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   permissionContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   permissionText: {
+    marginBottom: 20,
     textAlign: 'center',
-    paddingBottom: 12,
   },
-  camera: {
+  modalOverlay: {
     flex: 1,
-  },
-  flipButtonContainer: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 9999,
-    padding: 8,
+    justifyContent: 'flex-end',
   },
-  button: {
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '70%', // Takes up to 70% of screen height
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  apiButtonContainer: {
-    position: 'absolute',
-    bottom: 30,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 9999,
-  },
-  apiButton: {
-    padding: 15,
-  },
-  geminiButtonContainer: {
-    position: 'absolute',
-    bottom: 100,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 9999,
-  },
-  geminiButton: {
-    padding: 15,
-  },
-
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    marginBottom: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalScroll: {
+    marginBottom: Platform.OS === 'ios' ? 34 : 0, // Account for bottom safe area
+  },
+  resultText: {
+    fontSize: 16,
+    lineHeight: 24,
   },
 });
 

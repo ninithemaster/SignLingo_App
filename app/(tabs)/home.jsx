@@ -15,39 +15,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 // --- Placeholder Data ---
 const CULTURAL_NEWS = {
   imageUrl: 'https://i.pinimg.com/736x/01/ce/b3/01ceb328e555e791cf5866dd2466fe1b.jpg',
   title: 'Indigenous Languages Matter!',
-  snippet: 'Over 40% of the world’s languages are endangered. Indigenous communities use sign and spoken languages to pass down traditions and wisdom. Language is identity. Let’s keep it alive.',
+  snippet: `Over 40% of the world's languages are endangered. Indigenous communities use sign and spoken languages to pass down traditions and wisdom. Language is identity. Let's keep it alive.`,
 };
 // --- ---
 
-// --- Color Palette (Sky Blue & Beige) ---
-const COLOR_BEIGE = '#F5EFEB'; // Light Beige
-const COLOR_SKY_BLUE = '#C8D9E6'; // Sky Blue Header Background (Original - Not used for header bg anymore)
-const COLOR_DARK_TEXT_ON_BLUE = '#34495E'; // Dark Gray/Blue text for contrast on Sky Blue Header (Original)
-const COLOR_SUBTLE_TEXT_ON_BLUE = '#5D7A8D'; // Slightly lighter dark blue/gray for Header Subtitle (Original)
-const COLOR_ICON_ON_BLUE = '#343A40'; // Dark Icon for Header (Original)
-const COLOR_DARK_TEXT_ON_BEIGE = '#4E4644'; // Darker text derived from beige/brown tones for general text
-const COLOR_SUBTLE_BORDER_ON_BEIGE = '#EDE7E4'; // Border derived from beige background
-const COLOR_PLACEHOLDER_ON_BEIGE = '#EAE4E1'; // Placeholder derived from beige
-const COLOR_FEATURE_BLUE = '#87A6BB'; // A medium blue for feature cards
-const COLOR_TEXT_ON_FEATURE_BLUE = '#FFFFFF'; // White text for feature cards
-const COLOR_ICON_ON_FEATURE_BLUE = '#2C3E50'; // Dark icon for contrast on the feature blue
-const COLOR_HEADER_BACKGROUND = '#FFFFFF'; // White header background
-const COLOR_HEADER_TEXT = '#333333'; // Dark text for white header
-const COLOR_HEADER_SUBTEXT = '#555555'; // Slightly lighter text for white header
-const COLOR_HEADER_ICON = '#333333'; // Dark icon for white header
-const COLOR_NEWS_BACKGROUND = '#87A6BB';
-const COLOR_NEWS_TEXT = COLOR_TEXT_ON_FEATURE_BLUE;
-
 export default function Home() {
+  const { theme, isDarkMode } = useAppTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [userName, setUserName] = useState('There');
   const [signedIn, setSignedIn] = useState(false);
   const [timeSpent, setTimeSpent] = useState('7m 10s');
+  const [selectedFeature, setSelectedFeature] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -91,25 +75,159 @@ export default function Home() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.safeAreaContainer} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLOR_BEIGE} translucent={false} />
+  const featureInfo = {
+    learn: {
+      title: "LearnIt",
+      description: "Learn sign language through interactive lessons and practice exercises. Master essential signs and expressions at your own pace with our comprehensive learning modules.",
+    },
+    detect: {
+      title: "Vision",
+      description: "Use computer vision to detect and analyze sign language gestures in real-time. Our detection system helps you understand and practice signs accurately.",
+    },
+    recognize: {
+      title: "Gesture Go",
+      description: "Advanced recognition system that interprets your sign language gestures and provides instant feedback. Practice your signs and get real-time accuracy assessment.",
+    }
+  };
 
-      {/* Header */}
-      <View style={styles.headerWrapper}>
-        {/* headerInnerContainer style is updated below */}
-        <View style={styles.headerInnerContainer}>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerGreeting}>Hey there, {userName}!</Text>
-            <Text style={styles.headerSubtitle}>
-              One sign, one word, one step closer to connection.
-            </Text>
-          </View>
-          <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.profileIcon}>
-            <Feather name="user" size={28} color={COLOR_HEADER_ICON} />
+  const InfoModal = ({ isVisible, feature, onClose }) => (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>
+            {feature ? featureInfo[feature].title : ''}
+          </Text>
+          <Text style={[styles.modalDescription, { color: theme.subtitle }]}>
+            {feature ? featureInfo[feature].description : ''}
+          </Text>
+          <TouchableOpacity
+            style={[styles.modalButton, { backgroundColor: theme.primary }]}
+            onPress={onClose}
+          >
+            <Text style={styles.modalButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </View>
+    </Modal>
+  );
+
+  return (
+    <View style={[styles.mainContainer, { backgroundColor: theme.background }]}>
+      <StatusBar 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+        backgroundColor={theme.background} 
+      />
+
+      {/* Header */}
+      <SafeAreaView style={{ backgroundColor: theme.background }}>
+        <View style={[styles.headerWrapper, { backgroundColor: theme.background }]}>
+          <View style={[styles.headerInnerContainer, { 
+            backgroundColor: theme.headerBackground,
+            borderColor: theme.border,
+          }]}>
+            <View style={styles.headerTextContainer}>
+              <Text style={[styles.headerGreeting, { color: theme.text }]}>
+                Hey there, {userName}!
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: theme.subtitle }]}>
+                One sign, one word, one step closer to connection.
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.profileIcon}>
+              <Feather name="user" size={24} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+
+      {/* Scrollable Content */}
+      <ScrollView
+        style={[styles.scrollView, { backgroundColor: theme.background }]}
+        contentContainerStyle={styles.scrollContentContainer}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
+        {/* Features Section */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Our Features</Text>
+        <View style={styles.featuresHorizontalContainer}>
+          {/* Feature 1: Learn */}
+          <TouchableOpacity 
+            style={[styles.featureHorizontalItem, { backgroundColor: theme.cardBackground }]}
+            onPress={() => setSelectedFeature('learn')}
+          >
+            <Feather name="book-open" size={24} color={theme.text} />
+            <View style={styles.featureHorizontalText}>
+              <Text style={[styles.featureTitle, { color: theme.text }]}>Learn</Text>
+              <Text style={[styles.featureSubtitle, { color: theme.subtitle }]}>LearnIt</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Feature 2: Detect */}
+          <TouchableOpacity 
+            style={[styles.featureHorizontalItem, { backgroundColor: theme.cardBackground }]}
+            onPress={() => setSelectedFeature('detect')}
+          >
+            <Feather name="camera" size={24} color={theme.text} />
+            <View style={styles.featureHorizontalText}>
+              <Text style={[styles.featureTitle, { color: theme.text }]}>Detection</Text>
+              <Text style={[styles.featureSubtitle, { color: theme.subtitle }]}>Vision</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Feature 3: Recognize */}
+          <TouchableOpacity 
+            style={[styles.featureHorizontalItem, { backgroundColor: theme.cardBackground }]}
+            onPress={() => setSelectedFeature('recognize')}
+          >
+            <Feather name="zap" size={24} color={theme.text} />
+            <View style={styles.featureHorizontalText}>
+              <Text style={[styles.featureTitle, { color: theme.text }]}>Recognize</Text>
+              <Text style={[styles.featureSubtitle, { color: theme.subtitle }]}>Gesture Go</Text>
+            </View>
+          </TouchableOpacity>
+
+          <InfoModal 
+            isVisible={selectedFeature !== null}
+            feature={selectedFeature}
+            onClose={() => setSelectedFeature(null)}
+          />
+        </View>
+
+        {/* Time Tracker Card */}
+        {signedIn && (
+          <View style={[styles.trackerCard, { backgroundColor: theme.cardBackground }]}>
+            <Feather name="clock" size={20} color={theme.text} style={styles.trackerIcon} />
+            <Text style={[styles.trackerText, { color: theme.text }]}>Time Spent Today: </Text>
+            <Text style={[styles.trackerTime, { color: theme.text }]}>{timeSpent}</Text>
+          </View>
+        )}
+
+        {/* Cultural News Section */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Cultural Spotlight</Text>
+        <View style={[styles.newsCard, { 
+          backgroundColor: theme.cardBackground, 
+          borderColor: theme.border 
+        }]}>
+          <Image
+            source={{ uri: CULTURAL_NEWS.imageUrl }}
+            style={styles.newsImage}
+            resizeMode="cover"
+          />
+          <View style={styles.newsTextContainer}>
+            <Text style={[styles.newsTitle, { color: theme.text }]}>
+              {CULTURAL_NEWS.title}
+            </Text>
+            <Text style={[styles.newsSnippet, { color: theme.subtitle }]}>
+              {CULTURAL_NEWS.snippet}
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
 
       {/* Profile Modal */}
       <Modal
@@ -118,206 +236,107 @@ export default function Home() {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-         <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
-           <Pressable style={styles.modalContent} onPress={() => {}}>
-             <TouchableOpacity style={styles.profileRow} onPress={() => handleModalNavigation('/profile')}>
-               <Feather name="user" size={20} color="#555"/>
-               <Text style={styles.optionText}>View Profile</Text>
+         <Pressable 
+           style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]} 
+           onPress={() => setModalVisible(false)}
+         >
+           <Pressable 
+             style={[styles.modalContent, { 
+               backgroundColor: theme.cardBackground,
+               borderColor: theme.border,
+             }]} 
+             onPress={() => {}}
+           >
+             <TouchableOpacity 
+               style={styles.profileRow} 
+               onPress={() => handleModalNavigation('/profile')}
+             >
+               <Feather name="user" size={20} color={theme.text}/>
+               <Text style={[styles.optionText, { color: theme.text }]}>View Profile</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={styles.profileRow} onPress={() => handleModalNavigation('/settings')}>
-               <Feather name="settings" size={20} color="#555"/>
-               <Text style={styles.optionText}>Settings</Text>
+             <TouchableOpacity 
+               style={styles.profileRow} 
+               onPress={() => handleModalNavigation('/settings')}
+             >
+               <Feather name="settings" size={20} color={theme.text}/>
+               <Text style={[styles.optionText, { color: theme.text }]}>Settings</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={styles.profileRow} onPress={() => handleModalNavigation('/my-progress')}>
-               <Feather name="trending-up" size={20} color="#555"/>
-               <Text style={styles.optionText}>My Progress</Text>
+             <TouchableOpacity 
+               style={styles.profileRow} 
+               onPress={() => handleModalNavigation('/my-progress')}
+             >
+               <Feather name="trending-up" size={20} color={theme.text}/>
+               <Text style={[styles.optionText, { color: theme.text }]}>My Progress</Text>
              </TouchableOpacity>
-             <View style={styles.menuDivider} />
-             <TouchableOpacity style={styles.profileRow} onPress={handleSignOut}>
-               <Feather name="log-out" size={20} color="#e74c3c"/>
-               <Text style={[styles.optionText, styles.signOutText]}>Sign Out</Text>
+             <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+             <TouchableOpacity 
+               style={styles.profileRow} 
+               onPress={handleSignOut}
+             >
+               <Feather name="log-out" size={20} color={theme.danger}/>
+               <Text style={[styles.optionText, { color: theme.danger }]}>Sign Out</Text>
              </TouchableOpacity>
            </Pressable>
          </Pressable>
       </Modal>
-
-      {/* Main Content ScrollView */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Features Section - Horizontal Layout */}
-        <Text style={styles.sectionTitle}>Our Features</Text>
-        <View style={styles.featuresHorizontalContainer}>
-          {/* Feature 1: Learn */}
-          <View style={styles.featureHorizontalItem}>
-            <Feather name="book-open" size={30} color={COLOR_ICON_ON_FEATURE_BLUE} />
-            <View style={styles.featureHorizontalText}>
-                <Text style={styles.featureTitle}>Learn </Text>
-                <Text style={styles.featureSubtitle}>LearnIt</Text>
-            </View>
-          </View>
-          {/* Feature 2: Detect */}
-          <View style={styles.featureHorizontalItem}>
-            <Feather name="camera" size={30} color={COLOR_ICON_ON_FEATURE_BLUE} />
-            <View style={styles.featureHorizontalText}>
-                <Text style={styles.featureTitle}>Detection</Text>
-                <Text style={styles.featureSubtitle}>Visionn</Text>
-            </View>
-          </View>
-          {/* Feature 3: Recognize */}
-          <View style={styles.featureHorizontalItem}>
-            <Feather name="zap" size={30} color={COLOR_ICON_ON_FEATURE_BLUE} />
-            <View style={styles.featureHorizontalText}>
-                <Text style={styles.featureTitle}>Recognize</Text>
-                <Text style={styles.featureSubtitle}>Gesture Go</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Time Tracker Card */}
-         {signedIn && (
-            <View style={styles.trackerCard}>
-                <Feather name="clock" size={20} color="#5D7A8D" style={styles.trackerIcon} />
-                <Text style={styles.trackerText}>Time Spent Today: </Text>
-                <Text style={styles.trackerTime}>{timeSpent}</Text>
-            </View>
-         )}
-
-        {/* Cultural News Section */}
-        <Text style={styles.sectionTitle}>Cultural Spotlight</Text>
-        <View style={styles.newsCard}>
-          <Image
-            source={{ uri: CULTURAL_NEWS.imageUrl }}
-            style={styles.newsImage}
-            resizeMode="cover"
-          />
-          <View style={styles.newsTextContainer}>
-             <Text style={styles.newsTitle}>{CULTURAL_NEWS.title}</Text>
-             <Text style={styles.newsSnippet}>{CULTURAL_NEWS.snippet}</Text>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 // --- Styles ---
 const styles = StyleSheet.create({
-  safeAreaContainer: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: COLOR_BEIGE,
   },
-  // --- Header ---
   headerWrapper: {
-    paddingTop: 10,
-    paddingHorizontal: 15, // Add padding here to contain the inner box margin
-    backgroundColor: COLOR_BEIGE,
-    paddingBottom: 10, // Add padding bottom
+    paddingHorizontal: 15,
+    paddingVertical: 10,
   },
   headerInnerContainer: {
-    backgroundColor: COLOR_HEADER_BACKGROUND, // White background
-    paddingHorizontal: 20, // Inner padding
-    paddingVertical: 20,   // Inner padding vertical
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center', // Align items vertically center
-    borderRadius: 15, // Apply rounding to all corners << CHANGED
-    // Remove specific bottom radii
-    // borderBottomLeftRadius: 30, << REMOVED
-    // borderBottomRightRadius: 30, << REMOVED
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    borderWidth: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 4,
-    // Remove marginHorizontal and marginTop if wrapper has padding
-    // marginHorizontal: 5, << REMOVED
-    // marginTop: 0, << REMOVED
+    elevation: 3,
   },
   headerTextContainer: {
-    flex: 1, // Take available space
-    marginRight: 15, // Space between text and icon
+    flex: 1,
+    marginRight: 10,
   },
   headerGreeting: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: '600',
-    color: COLOR_HEADER_TEXT,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: COLOR_HEADER_SUBTEXT,
     lineHeight: 20,
   },
   profileIcon: {
-    // Removed marginTop as alignItems: 'center' handles vertical position
-    padding: 5, // Keep touchable area reasonable
+    padding: 5,
   },
-
-  // --- Modal Styles --- (Keep as is)
-  modalOverlay: {
+  scrollView: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    gap: 15,
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: '#E0D8D6',
-    marginVertical: 10,
-  },
-  signOutText: {
-    color: '#e74c3c',
-    fontWeight: '500',
-  },
-
-  // --- ScrollView Content --- (Keep as is)
   scrollContentContainer: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
-    backgroundColor: COLOR_BEIGE,
+    paddingBottom: 100, // Add extra padding at bottom for tab bar
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLOR_DARK_TEXT_ON_BEIGE,
-    marginBottom: 15,
-    marginTop: 5,
-  },
-  // --- Features Section - Horizontal Style --- (Keep as is)
   featuresHorizontalContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    marginBottom: 20,
     marginHorizontal: -5,
   },
   featureHorizontalItem: {
     flex: 1,
-    backgroundColor: COLOR_FEATURE_BLUE,
     borderRadius: 12,
     paddingVertical: 20,
     paddingHorizontal: 10,
@@ -328,63 +347,53 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-    flexDirection: 'column',
   },
   featureHorizontalText: {
     marginTop: 10,
     alignItems: 'center',
   },
   featureTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    color: COLOR_TEXT_ON_FEATURE_BLUE, // White text
-    textAlign: 'center',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   featureSubtitle: {
-    fontSize: 11,
-    color: COLOR_TEXT_ON_FEATURE_BLUE, // White text
-    textAlign: 'center',
+    fontSize: 12,
   },
-
-  // --- Tracker Card --- (Keep as is)
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 15,
+    marginTop: 20,
+  },
   trackerCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    marginBottom: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: COLOR_SUBTLE_BORDER_ON_BEIGE,
-    borderWidth: 1,
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   trackerIcon: {
-      marginRight: 12,
-      color: '#5D7A8D',
+    marginRight: 10,
   },
   trackerText: {
-      fontSize: 15,
-      fontWeight: '500',
-      color: COLOR_DARK_TEXT_ON_BEIGE,
+    fontSize: 14,
+    fontWeight: '500',
   },
   trackerTime: {
-      fontSize: 15,
-      fontWeight: 'bold',
-      color: COLOR_DARK_TEXT_ON_BEIGE,
+    fontSize: 14,
+    fontWeight: '600',
   },
-
-  // --- Cultural News Section --- (Keep as is)
   newsCard: {
-    backgroundColor: COLOR_NEWS_BACKGROUND,
-    borderRadius: 15,
-    marginBottom: 20,
+    borderRadius: 12,
     overflow: 'hidden',
+    borderWidth: 2,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -393,21 +402,73 @@ const styles = StyleSheet.create({
   },
   newsImage: {
     width: '100%',
-    height: 160,
+    height: 200,
   },
   newsTextContainer: {
-      padding: 15,
+    padding: 15,
   },
   newsTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: COLOR_NEWS_TEXT,
     marginBottom: 8,
   },
   newsSnippet: {
     fontSize: 14,
-    color: COLOR_NEWS_TEXT,
     lineHeight: 20,
-    opacity: 0.9,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '90%',
+    padding: 20,
+    borderRadius: 15,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    gap: 15,
+  },
+  optionText: {
+    fontSize: 16,
+  },
+  menuDivider: {
+    height: 1,
+    marginVertical: 10,
   },
 });

@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, Pressable, Alert } from 'react-native';
+import { StyleSheet, View, Text, TextInput, Pressable, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 export default function SignIn() {
+  const { theme } = useAppTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -44,51 +46,77 @@ export default function SignIn() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome</Text>
-        <Text style={styles.subtitle}>Sign in to continue</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          editable={!isLoading}
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!isLoading}
-        />
-
-        <Pressable 
-          style={[styles.button, isLoading && styles.buttonDisabled]}
-          onPress={handleSignIn}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.content, { backgroundColor: theme.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: theme.text }]}>Welcome Back!</Text>
+          <Text style={[styles.subtitle, { color: theme.subtitle }]}>
+            Sign in to continue your learning journey
           </Text>
-        </Pressable>
+        </View>
 
-        <Link href="/forgot-password" asChild>
-          <Pressable style={styles.linkButton} disabled={isLoading}>
-            <Text style={styles.linkText}>Forgot Password?</Text>
-          </Pressable>
-        </Link>
+        <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: theme.text }]}>Email</Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: theme.inputBackground,
+                borderColor: theme.inputBorder,
+                color: theme.text,
+              }]}
+              placeholder="Enter your email"
+              placeholderTextColor={theme.placeholder}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!isLoading}
+            />
+          </View>
 
-        <Link href="/sign-up" asChild>
-          <Pressable style={styles.linkButton} disabled={isLoading}>
-            <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
-          </Pressable>
-        </Link>
+          <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: theme.text }]}>Password</Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: theme.inputBackground,
+                borderColor: theme.inputBorder,
+                color: theme.text,
+              }]}
+              placeholder="Enter your password"
+              placeholderTextColor={theme.placeholder}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              editable={!isLoading}
+            />
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.button, { backgroundColor: theme.primary }]}
+            onPress={handleSignIn}
+            disabled={isLoading}
+          >
+            <Text style={[styles.buttonText, { color: theme.buttonText }]}>
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={[styles.footerText, { color: theme.text }]}>
+            Don't have an account?{' '}
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/sign-up')}>
+            <Text style={[styles.linkText, { color: theme.link }]}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity 
+          style={styles.forgotPasswordContainer}
+          onPress={() => router.push('/forgot-password')}
+        >
+          <Text style={[styles.linkText, { color: theme.link }]}>Forgot Password?</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -97,12 +125,14 @@ export default function SignIn() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   content: {
     flex: 1,
     padding: 20,
     justifyContent: 'center',
+  },
+  header: {
+    marginBottom: 30,
   },
   title: {
     fontSize: 28,
@@ -115,6 +145,17 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginBottom: 30,
+  },
+  form: {
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
   input: {
     borderWidth: 1,
@@ -139,8 +180,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  linkButton: {
+  footer: {
     marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  footerText: {
+    fontSize: 16,
   },
   linkText: {
     color: '#007AFF',
@@ -158,5 +204,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     fontWeight: '600',
+  },
+  forgotPasswordContainer: {
+    marginTop: 15,
+    alignItems: 'center',
   },
 }); 
