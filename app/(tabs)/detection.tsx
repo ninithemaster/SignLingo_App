@@ -14,19 +14,19 @@ import {
   Modal,
   ScrollView,
 } from "react-native";
-import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAppTheme } from '@/hooks/useAppTheme';
-
-const API_ENDPOINT = "http://192.168.1.7:5000/obj-detection";
-const GEMINI_API_ENDPOINT = "http://192.168.1.7:5000/gemini-detection";
+import * as Speech from 'expo-speech';
+const apiUrl  = process.env.EXPO_PUBLIC_API_URL;
+const speak = (text: string) => {
+  Speech.speak(text);
+}
 
 const Camera = () => {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [isApiLoading, setIsApiLoading] = useState(false);
-  const [isGeminiLoading, setIsGeminiLoading] = useState(false);
-  const [geminiResult, setGeminiResult] = useState<string>("");
   const [showResults, setShowResults] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const { theme } = useAppTheme();
@@ -83,17 +83,19 @@ const Camera = () => {
       } as any); // Cast to any to satisfy FormData append type
 
       // Send FormData to the backend
-      const response = await axios.post(API_ENDPOINT, formData, {
+      const response = await axios.post(apiUrl + "/detect_object", formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
       console.log("API Response:", response.data.detections);
-      const objects =  response.data.detections && response.data.detections.length > 0
-            ? `Identified Objects: ${response.data.detections.join(", ")}`
+      const objects =  response.data.name && response.data.name.length > 0
+            ? `Identified Objects: ${response.data.name.join(", ")}`
             : "No objects found.";
+      
       Alert.alert("Success", objects);
+      speak(objects);
       // Handle the successful response data here
 
     } catch (error) {
@@ -108,49 +110,6 @@ const Camera = () => {
       // Handle the error appropriately
     } finally {
       setIsApiLoading(false);
-    }
-  };
-  const handleGeminiDetection = async () => {
-    if (!cameraRef.current) {
-      Alert.alert("Error", "Camera not available.");
-      return;
-    }
-
-    setIsGeminiLoading(true);
-    try {
-      const options = { quality: 0.7 };
-      const picture = await cameraRef.current.takePictureAsync(options);
-
-      if (!picture || !picture.uri) {
-        throw new Error("Failed to capture picture.");
-      }
-
-      const formData = new FormData();
-      formData.append('image', {
-        uri: picture.uri,
-        name: 'photo.jpg',
-        type: 'image/jpeg',
-      } as any);
-
-      const response = await axios.post(GEMINI_API_ENDPOINT, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      console.log("Gemini API Response:", response.data.prediction);
-      setGeminiResult(response.data.prediction);
-      setShowResults(true);
-    } 
-    catch (error) {
-      console.error("Gemini API Error:", error);
-      let errorMessage = "Failed to process Gemini request.";
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.error || error.message;
-      }
-      Alert.alert("Error", errorMessage);
-    } finally {
-      setIsGeminiLoading(false);
     }
   };
 
@@ -189,23 +148,8 @@ const Camera = () => {
                   color="white"
                 />
               </TouchableOpacity>
-
-              <TouchableOpacity 
-                onPress={handleGeminiDetection}
-                style={[styles.controlButton, styles.geminiButton]}
-                disabled={isGeminiLoading}
-              >
-                <FontAwesome5 name="robot" size={35} color="white" />
-              </TouchableOpacity>
             </View>
           </View>
-
-          {/* Loading Indicator */}
-          {(isApiLoading || isGeminiLoading) && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color="#ffffff" />
-            </View>
-          )}
         </CameraView>
 
         {/* Results Modal */}
@@ -219,7 +163,7 @@ const Camera = () => {
             <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: theme.text }]}>
-                  Gemini Analysis
+                  Analysis
                 </Text>
                 <TouchableOpacity 
                   onPress={() => setShowResults(false)}
@@ -230,7 +174,7 @@ const Camera = () => {
               </View>
               <ScrollView style={styles.modalScroll}>
                 <Text style={[styles.resultText, { color: theme.text }]}>
-                  {geminiResult}
+                  {/* Removed geminiResult */}
                 </Text>
               </ScrollView>
             </View>
@@ -290,9 +234,6 @@ const styles = StyleSheet.create({
   },
   apiButton: {
     backgroundColor: 'rgba(0, 150, 136, 0.8)', // Teal color
-  },
-  geminiButton: {
-    backgroundColor: 'rgba(33, 150, 243, 0.8)', // Blue color
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

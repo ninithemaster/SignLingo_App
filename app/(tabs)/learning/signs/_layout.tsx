@@ -28,6 +28,18 @@ export default function SignsLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen 
+        name="isl"
+        options={{
+          headerShown: false,
+        }}
+      />
+       <Stack.Screen 
+        name="quiz"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 } 

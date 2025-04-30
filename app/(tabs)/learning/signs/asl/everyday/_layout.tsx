@@ -19,7 +19,7 @@ export default function EverydayLayout() {
         name="index"
         options={{
           title: 'Everyday Signs',
-          headerShown: false,
+          headerShown: true,
           headerLargeTitle: true,
           headerLargeTitleStyle: {
             color: theme.text,

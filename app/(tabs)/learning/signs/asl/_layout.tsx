@@ -8,40 +8,46 @@ export default function ASLLayout() {
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: theme.background,
+          backgroundColor: theme.cardBackground,
         },
         headerTintColor: theme.text,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        }
+        headerShadowVisible: false,
+        animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen 
+      <Stack.Screen
         name="index"
         options={{
-          title: "ASL",
-          headerShown: true,
+          title: 'ASL',
+          headerShown: false,
         }}
       />
-      <Stack.Screen 
+      <Stack.Screen
         name="intro"
         options={{
-          title: "Intro",
+          title: 'Introduction',
           headerShown: true,
         }}
       />
-      <Stack.Screen 
+      <Stack.Screen
         name="basics"
         options={{
-          title: "Level 1: Basics",
+          title: 'Basics',
           headerShown: true,
         }}
       />
-      <Stack.Screen 
+      <Stack.Screen
         name="everyday"
         options={{
-          title: "Level 2: Everyday Signs",
-          headerShown: true,
+          title: 'Everyday Signs',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="express"
+        options={{
+          title: 'Express',
+          headerShown: false,
         }}
       />
     </Stack>

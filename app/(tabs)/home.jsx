@@ -10,13 +10,15 @@ import {
   Image,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
-
+import axios from 'axios';
+const apiUrl  = process.env.EXPO_PUBLIC_API_URL;
 // --- Placeholder Data ---
 const CULTURAL_NEWS = {
   imageUrl: 'https://i.pinimg.com/736x/01/ce/b3/01ceb328e555e791cf5866dd2466fe1b.jpg',
@@ -28,10 +30,13 @@ const CULTURAL_NEWS = {
 export default function Home() {
   const { theme, isDarkMode } = useAppTheme();
   const [modalVisible, setModalVisible] = useState(false);
-  const [userName, setUserName] = useState('There');
+  const [userName, setUserName] = useState('');
   const [signedIn, setSignedIn] = useState(false);
-  const [timeSpent, setTimeSpent] = useState('7m 10s');
+  const [timeSpent, setTimeSpent] = useState('0:00');
+  const [sessionStartTime, setSessionStartTime] = useState(null);
   const [selectedFeature, setSelectedFeature] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -41,26 +46,70 @@ export default function Home() {
         if (token && name) {
           setSignedIn(true);
           setUserName(name);
+          setUserId(name);
         } else {
           setSignedIn(false);
-          setUserName('There');
+          setUserName('');
+          setUserId(null);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
         setSignedIn(false);
         setUserName('There');
+        setUserId(null);
       }
     };
     fetchUser();
   }, []);
+
+  useEffect(() => {
+    let timer;
+    const initializeSession = async () => {
+      if (signedIn) {
+        await startTask('app_session', userId);
+        timer = setInterval(updateTimeSpent, 60000);
+      }
+    };
+
+    initializeSession();
+    
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+      if (signedIn) {
+        endTask('app_session', userId);
+      }
+    };
+  }, [signedIn]);
+
+  // Reset session at midnight
+  useEffect(() => {
+    if (signedIn) {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const timeUntilMidnight = tomorrow - now;
+
+      const midnightReset = setTimeout(() => {
+        endTask('app_session', userId);
+        startTask('app_session', userId);
+      }, timeUntilMidnight);
+
+      return () => clearTimeout(midnightReset);
+    }
+  }, [signedIn]);
 
   const handleSignOut = async () => {
     try {
       setModalVisible(false);
       await SecureStore.deleteItemAsync('userToken');
       await SecureStore.deleteItemAsync('userName');
+      await SecureStore.deleteItemAsync('userId');
       setSignedIn(false);
       setUserName('There');
+      setUserId(null);
       router.replace('/sign-in');
     } catch (error) {
       console.error("Failed to sign out:", error);
@@ -78,15 +127,15 @@ export default function Home() {
   const featureInfo = {
     learn: {
       title: "LearnIt",
-      description: "Learn sign language through interactive lessons and practice exercises. Master essential signs and expressions at your own pace with our comprehensive learning modules.",
+      description: "Dive into the world of sign language and traditional language learning, enriched with cultural context, making every lesson an immersive experience.",
     },
     detect: {
       title: "Vision",
-      description: "Use computer vision to detect and analyze sign language gestures in real-time. Our detection system helps you understand and practice signs accurately.",
+      description:"Leverage cutting-edge object detection with YOLO, enabling you to identify and analyze everyday objects, enhancing your learning experience beyond sign language.",
     },
     recognize: {
       title: "Gesture Go",
-      description: "Advanced recognition system that interprets your sign language gestures and provides instant feedback. Practice your signs and get real-time accuracy assessment.",
+      description: "Unlock the power of sign language recognition with our advanced system, accurately detecting your gestures and helping you learn at your own pace.",
     }
   };
 
@@ -115,6 +164,156 @@ export default function Home() {
       </View>
     </Modal>
   );
+
+
+  const startTask = async () => {
+    if (!userId) {
+      console.error("No user ID available");
+      return;
+    }
+  
+    try {
+      const response = await axios.post(apiUrl + '/start-task', {
+        task_name: 'app_session',
+        user_id: userId
+      });
+  
+      if (response.data) {
+        setSessionStartTime(new Date());
+        console.log("Task started successfully:", response.data);
+      }
+    } catch (error) {
+      console.error("Error starting task:", error);
+    }
+  };
+  
+  const endTask = async () => {
+    if (!userId) {
+      console.error("No user ID available");
+      return;
+    }
+  
+    try {
+      const response = await axios.post(apiUrl + '/end-task', {
+        task_name: 'app_session',
+        user_id: userId
+      });
+  
+      if (response.data) {
+        setSessionStartTime(null);
+        console.log("Task ended successfully:", response.data);
+      }
+    } catch (error) {
+      console.error("Error ending task:", error);
+    }
+  };
+  
+  // Update the midnight reset useEffect
+  useEffect(() => {
+    if (signedIn && userId) {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const timeUntilMidnight = tomorrow - now;
+  
+      const midnightReset = setTimeout(() => {
+        endTask();
+        startTask();
+      }, timeUntilMidnight);
+  
+      return () => clearTimeout(midnightReset);
+    }
+  }, [signedIn, userId]);
+
+  // Update the updateTimeSpent function
+const getUserStatus = async (userId) => {
+  try {
+    const response = await axios.get(apiUrl + '/get-user-status', {
+      params: { user_id: userId }
+    });
+
+    const { current_task, start_time, level, streak } = response.data;
+    const localStartTime = new Date(start_time).toLocaleString();
+
+    console.log(`Current Task: ${current_task}`);
+    console.log(`Started at: ${localStartTime}`);
+    console.log(`Streak: ${streak}, Level: ${level}`);
+  } catch (error) {
+    console.error('Error getting user status:', error);
+  }
+};
+const checkUserStatus = async (userId) => {
+  try {
+    const response = await axios.get(`http://<your-backend-url>/get-user-status`, {
+      params: { user_id: userId }
+    });
+
+    const { current_task, start_time, level, streak } = response.data;
+    const localStartTime = new Date(start_time).toLocaleString();
+
+    console.log(`Current Task: ${current_task}`);
+    console.log(`Started at: ${localStartTime}`);
+    console.log(`Streak: ${streak}, Level: ${level}`);
+  } catch (error) {
+    console.error('Error getting user status:', error);
+  }
+};
+
+
+  const updateTimeSpent = async () => {
+    if (!sessionStartTime) {
+      await startTask('app_session', userId);
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      // Always calculate local time first
+      const currentTime = new Date();
+      const localDurationMinutes = Math.max(0, (currentTime - sessionStartTime) / (1000 * 60));
+      setTimeSpent(formatTime(localDurationMinutes));
+    } catch (error) {
+      console.error('Error updating time:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const formatTime = (minutes) => {
+    // Ensure minutes is a valid number and not negative
+    if (isNaN(minutes) || minutes < 0) {
+      return "0:00";
+    }
+    
+    // Round to nearest minute
+    minutes = Math.round(minutes);
+    
+    // Cap at 24 hours (1440 minutes)
+    minutes = Math.min(minutes, 1440);
+    
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    return `${hours}:${mins.toString().padStart(2, '0')}`;
+  };
+
+  // Reset session at midnight
+  useEffect(() => {
+    if (signedIn) {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const timeUntilMidnight = tomorrow - now;
+
+      const midnightReset = setTimeout(() => {
+        endSession();
+        startSession();
+      }, timeUntilMidnight);
+
+      return () => clearTimeout(midnightReset);
+    }
+  }, [signedIn]);
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: theme.background }]}>
@@ -201,9 +400,15 @@ export default function Home() {
         {/* Time Tracker Card */}
         {signedIn && (
           <View style={[styles.trackerCard, { backgroundColor: theme.cardBackground }]}>
-            <Feather name="clock" size={20} color={theme.text} style={styles.trackerIcon} />
-            <Text style={[styles.trackerText, { color: theme.text }]}>Time Spent Today: </Text>
-            <Text style={[styles.trackerTime, { color: theme.text }]}>{timeSpent}</Text>
+            <View style={styles.trackerContent}>
+              <View style={styles.timerContainer}>
+                <Feather name="clock" size={20} color={theme.text} />
+                <Text style={[styles.timerText, { color: theme.text }]}>
+                  {isUpdating ? 'Updating...' : `Time spent today: ${timeSpent}`}
+                </Text>
+              </View>
+              {isUpdating && <ActivityIndicator size="small" color={theme.primary} style={styles.trackerLoader} />}
+            </View>
           </View>
         )}
 
@@ -260,13 +465,6 @@ export default function Home() {
              >
                <Feather name="settings" size={20} color={theme.text}/>
                <Text style={[styles.optionText, { color: theme.text }]}>Settings</Text>
-             </TouchableOpacity>
-             <TouchableOpacity 
-               style={styles.profileRow} 
-               onPress={() => handleModalNavigation('/my-progress')}
-             >
-               <Feather name="trending-up" size={20} color={theme.text}/>
-               <Text style={[styles.optionText, { color: theme.text }]}>My Progress</Text>
              </TouchableOpacity>
              <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
              <TouchableOpacity 
@@ -367,27 +565,31 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   trackerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
     borderRadius: 12,
+    padding: 16,
     marginBottom: 20,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 4,
   },
-  trackerIcon: {
-    marginRight: 10,
+  trackerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  trackerText: {
-    fontSize: 14,
+  timerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timerText: {
+    fontSize: 16,
+    marginLeft: 8,
     fontWeight: '500',
   },
-  trackerTime: {
-    fontSize: 14,
-    fontWeight: '600',
+  trackerLoader: {
+    marginLeft: 8,
   },
   newsCard: {
     borderRadius: 12,
@@ -472,3 +674,5 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
 });
+
+

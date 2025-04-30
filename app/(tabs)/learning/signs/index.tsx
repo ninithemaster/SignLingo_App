@@ -25,6 +25,12 @@ export default function SignsScreen() {
       icon: "flower-outline",
       route: "/(tabs)/learning/signs/isl",
       description: "Learn ISL, the primary sign language of India"
+    },
+    {
+      title: "Test your knowledge",
+      icon: "help-circle-outline",
+      route: "/(tabs)/learning/signs/quiz",
+      description: "Test your knowledge of sign languages"
     }
   ];
 

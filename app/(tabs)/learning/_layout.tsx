@@ -29,7 +29,7 @@ export default function LearningLayout() {
         }}
       />
       <Stack.Screen 
-        name="languages/index"
+        name="languages"
         options={{
           title: "Languages",
         }}

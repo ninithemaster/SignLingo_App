@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TextInput, Pressable, Alert } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import axios from "axios";
+const apiUrl = process.env.EXPO_PUBLIC_API_URL; 
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -16,7 +17,7 @@ export default function ForgotPassword() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://192.168.1.7:5000/forgotpassword', {
+      const response = await axios.post(apiUrl + '/forgotpassword',{
         email: email
       });
 

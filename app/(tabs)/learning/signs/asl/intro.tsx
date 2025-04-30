@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ScrollView, Image, ViewStyle, TextStyle, ImageStyle } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
-
+import { Image } from 'expo-image';
 type Styles = {
   container: ViewStyle;
   contentContainer: ViewStyle;
@@ -28,7 +28,7 @@ export default function ASLIntroScreen() {
         <Image
           source={require('@/assets/images/asl/intro/Asl Invite GIF.gif')}
           style={styles.image}
-          resizeMode="cover"
+          contentFit="contain"
         />
         <Text style={[styles.content, { color: theme.subtitle }]}>
           ASL (American Sign Language) is a complete, natural language used by the Deaf and Hard of Hearing community in the United States and parts of Canada.
@@ -174,7 +174,7 @@ const styles = StyleSheet.create<Styles>({
     height: 250,
     borderRadius: 10,
     marginTop: 0,
-    marginBottom: 16,
+    marginBottom: 0,
     alignSelf: 'center',
     aspectRatio: 1,
     objectFit: 'contain',

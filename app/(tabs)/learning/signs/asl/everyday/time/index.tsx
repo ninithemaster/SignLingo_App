@@ -7,6 +7,16 @@ import { useState } from 'react';
 export default function TimeScreen() {
   const { theme } = useAppTheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isTimeModalVisible, setIsTimeModalVisible] = useState(false);
+  const [selectedTimeExpression, setSelectedTimeExpression] = useState('');
+
+  const timeExpressions = [
+    { name: 'Good Morning', image: require('@/assets/images/asl/time/Good Morning.png') },
+    { name: 'Night', image: require('@/assets/images/asl/time/Night.png') },
+    { name: 'Today', image: require('@/assets/images/asl/time/today.png') },
+    { name: 'Tomorrow', image: require('@/assets/images/asl/time/tomorrow.png') },
+    { name: 'Yesterday', image: require('@/assets/images/asl/time/yesterday.png') }
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -51,13 +61,55 @@ export default function TimeScreen() {
             How to Sign Days
           </Text>
           <Text style={[styles.infoText, { color: theme.subtitle }]}>
-            Most days are signed by making the first letter of the day and moving it downward. 
-            For example, Monday uses 'M', Tuesday uses 'T', etc. Sunday is unique - it uses 
-            an 'S' handshape in a circular motion.
+          Each day of the week is typically signed using a combination of a handshape letter (usually the first letter of the day) and a small circular motion.
+          </Text>
+        </View>
+
+        {/* Time-related signs section */}
+        <Text style={[styles.subtitle, { color: theme.subtitle, marginTop: 24 }]}>
+          Learn to sign time-related expressions
+        </Text>
+
+        <Animated.View entering={FadeIn}>
+          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+            <View style={styles.cardContent}>
+              <View style={styles.timeExpressionsGrid}>
+                {timeExpressions.map((expression, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.timeExpressionItem}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setSelectedTimeExpression(expression.name);
+                      setIsTimeModalVisible(true);
+                    }}
+                  >
+                    <Image
+                      source={expression.image}
+                      style={styles.timeExpressionImage}
+                      resizeMode="contain"
+                    />
+                    <Text style={[styles.timeExpressionLabel, { color: theme.text }]}>
+                      {expression.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+
+        <View style={styles.infoSection}>
+          <Text style={[styles.infoTitle, { color: theme.text }]}>
+            How to Sign Time Expressions
+          </Text>
+          <Text style={[styles.infoText, { color: theme.subtitle }]}>
+          Time expressions (like yesterday, tomorrow, now, week, month) are usually signed at the beginning of a sentence to set the tense. Most signs involve motion relative to the body—past moves backward, future moves forward.
           </Text>
         </View>
       </ScrollView>
 
+      {/* Days Modal */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -99,6 +151,40 @@ export default function TimeScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Time Expressions Modal */}
+      <Modal
+        visible={isTimeModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsTimeModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsTimeModalVisible(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsTimeModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color={theme.text} />
+            </TouchableOpacity>
+            
+            <View style={styles.modalInner}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                {selectedTimeExpression}
+              </Text>
+              <Image
+                source={timeExpressions.find(exp => exp.name === selectedTimeExpression)?.image}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -109,6 +195,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: 40,
   },
   subtitle: {
     fontSize: 16,
@@ -154,6 +241,7 @@ const styles = StyleSheet.create({
   },
   infoSection: {
     padding: 16,
+    marginBottom: 16,
   },
   infoTitle: {
     fontSize: 20,
@@ -205,5 +293,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  timeExpressionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    width: '100%',
+    gap: 16,
+  },
+  timeExpressionItem: {
+    width: '45%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  timeExpressionImage: {
+    width: '100%',
+    height: 120,
+    marginBottom: 8,
+  },
+  timeExpressionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 }); 

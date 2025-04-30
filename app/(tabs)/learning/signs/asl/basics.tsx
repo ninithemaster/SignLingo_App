@@ -1,41 +1,90 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal,Dimensions,ViewStyle, TextStyle, ImageStyle} from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { Ionicons } from '@expo/vector-icons';
-
+import { useState } from 'react';
+import { Image } from 'expo-image';
+type Styles = {
+  container: ViewStyle;
+  contentContainer: ViewStyle;
+  section: ViewStyle;
+  title: TextStyle;
+  content: TextStyle;
+  image: ImageStyle;
+  exampleBox: ViewStyle;
+}; 
 type Section = {
   title: string;
-  items: string[];
+  items: Array<{
+    name: string;
+    image: any; // We'll add actual image imports
+  }>;
   icon: keyof typeof Ionicons.glyphMap;
 };
 
 export default function BasicsScreen() {
   const { theme } = useAppTheme();
+  const [selectedItem, setSelectedItem] = useState<{ name: string; image: any } | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const sections: Section[] = [
     {
       title: "Alphabet",
       icon: "text-outline",
-      items: ["Letters A through Z"]
+      items: [
+        { 
+          name: "Letters A through Z",
+          image: require('../../../../../assets/images/asl/basics/alphabets.png')
+        }
+      ]
     },
     {
       title: "Numbers",
       icon: "calculator-outline",
-      items: ["Numbers 0-20", "Age and time expressions"]
+      items: [
+        {
+          name: "Numbers 0-9",
+          image: require('../../../../../assets/images/asl/basics/numbers.png')
+        },
+        {
+          name: "Age expressions",
+          image: require('../../../../../assets/images/asl/basics/AGE.png')
+        },
+        {
+          name: "Time expressions",
+          image: require('../../../../../assets/images/asl/basics/time.png')
+        }
+      ]
     },
     {
       title: "Basic Greetings & Phrases",
       icon: "hand-left-outline",
-      items: ["Hello", "Thank you", "Sorry", "Please", "How are you?"]
+      items: [
+        { name: "Hello", image: require('../../../../../assets/images/asl/basics/Hello.jpeg') },
+        { name: "Thank you", image: require('../../../../../assets/images/asl/basics/thanku.jpg') },
+        { name: "Sorry", image: require('../../../../../assets/images/asl/basics/sorry.jpeg') },
+        { name: "Please", image: require('../../../../../assets/images/asl/basics/pleasepic.jpg') },
+        { name: "How are you?", image: require('../../../../../assets/images/asl/basics/Howareyou.gif') }
+      ]
     },
     {
       title: "Pronouns",
       icon: "people-outline",
-      items: ["I", "You", "He/She", "We", "They"]
+      items: [
+        { 
+          name: "Pronouns (I, You, He/She, We, They)",
+          image: require('../../../../../assets/images/asl/basics/pronouns.jpg')
+        }
+      ]
     },
     {
       title: "Simple Questions",
       icon: "help-circle-outline",
-      items: ["What", "Where", "Who", "When", "Why", "How"]
+      items: [
+        {
+          name: "Question Words (What, Where, Who, When, Why, How)",
+          image: require('../../../../../assets/images/asl/basics/questions.jpg')
+        }
+      ]
     }
   ];
 
@@ -70,9 +119,13 @@ export default function BasicsScreen() {
               <TouchableOpacity 
                 key={itemIndex}
                 style={[styles.item, { borderBottomColor: theme.border }]}
+                onPress={() => {
+                  setSelectedItem(item);
+                  setModalVisible(true);
+                }}
               >
                 <Text style={[styles.itemText, { color: theme.subtitle }]}>
-                  {item}
+                  {item.name}
                 </Text>
                 <Ionicons name="chevron-forward" size={20} color={theme.text} />
               </TouchableOpacity>
@@ -80,6 +133,36 @@ export default function BasicsScreen() {
           </View>
         </View>
       ))}
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                {selectedItem?.name}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+            {selectedItem?.image && (
+              <Image
+                source={selectedItem.image}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -159,5 +242,45 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 16,
     flex: 1,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxHeight: '80%',
+    borderRadius: 15,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalImage: {
+    width: '100%',
+    height: 300,
+    borderRadius: 10,
   },
 }); 

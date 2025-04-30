@@ -8,11 +8,13 @@ import {
     Alert,
     ScrollView, // Import ScrollView
     Platform,   // Import Platform
-    ActivityIndicator // Import ActivityIndicator
+    ActivityIndicator, // Import ActivityIndicator
+    Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 import axios from "axios";
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 // --- Re-apply Style Constants ---
 const THEME_COLOR = '#E91E63';
@@ -51,7 +53,7 @@ export default function SignUp() {
     try {
       // --- 4. Update API Call Data ---
       console.log(name, email, password)
-      const response = await axios.post('http://192.168.1.7:5000/signup',{
+      const response = await axios.post(apiUrl + '/signup',{
         name, // Include name in the request body
         email,
         password,
@@ -83,14 +85,20 @@ export default function SignUp() {
   };
 
   return (
-    // --- Apply SafeAreaView and ScrollView from previous styling ---
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* --- Use container View from previous styling --- */}
         <View style={styles.container}>
+          <View style={styles.imageContainer}>
+            <Image 
+              source={require('@/assets/images/Signup.png')}
+              style={styles.image}
+              resizeMode="contain"
+            />
+          </View>
 
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Sign up to get started</Text>
@@ -186,9 +194,9 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingVertical: 40, // Adjusted padding (can be tuned)
+    paddingVertical: 10,
     paddingHorizontal: 25,
   },
   container: {
@@ -196,17 +204,28 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignItems: 'center',
   },
- title: {
-    fontSize: 26,
+  imageContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 10,
+    marginTop: 20,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'contain',
+  },
+  title: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: DARK_TEXT,
     marginBottom: 8,
     textAlign: 'center',
- },
+  },
    subtitle: {
     fontSize: 16,
     color: MEDIUM_TEXT,
-    marginBottom: 35,
+    marginBottom: 25,
     textAlign: 'center',
   },
   input: {

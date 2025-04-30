@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, Pressable, Alert, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TextInput, Pressable, Alert, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
 import { useAppTheme } from '@/hooks/useAppTheme';
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function SignIn() {
   const { theme } = useAppTheme();
@@ -20,25 +21,19 @@ export default function SignIn() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://192.168.1.7:5000/signin', {
+      const response = await axios.post(apiUrl + '/signin', {
         email,
         password,
       });
       const { token, user } = response.data;
-      console.log(response.data.user.name)
-      // Store the token securely (you might want to use AsyncStorage or a more secure solution)
-      // await AsyncStorage.setItem('userToken', response.data.token);
       await SecureStore.setItemAsync('userToken', token);
       await SecureStore.setItemAsync('userName', user.name);
-      // Navigate to the main app
       router.replace('/home');
     } catch (error) {
       let errorMessage = 'An error occurred while signing in';
-      
       if (error.message) {
         errorMessage = error.message;
       }
-
       Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
@@ -47,6 +42,14 @@ export default function SignIn() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={styles.imageContainer}>
+        <Image 
+          source={require('@/assets/images/Signin.png')}
+          style={styles.image}
+          resizeMode="contain"
+        />
+      </View>
+      
       <View style={[styles.content, { backgroundColor: theme.background }]}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: theme.text }]}>Welcome Back!</Text>
@@ -57,14 +60,13 @@ export default function SignIn() {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: theme.text }]}>Email</Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.inputBackground,
                 borderColor: theme.inputBorder,
                 color: theme.text,
               }]}
-              placeholder="Enter your email"
+              placeholder="Email"
               placeholderTextColor={theme.placeholder}
               value={email}
               onChangeText={setEmail}
@@ -75,14 +77,13 @@ export default function SignIn() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: theme.text }]}>Password</Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.inputBackground,
                 borderColor: theme.inputBorder,
                 color: theme.text,
               }]}
-              placeholder="Enter your password"
+              placeholder="Password"
               placeholderTextColor={theme.placeholder}
               value={password}
               onChangeText={setPassword}
@@ -126,62 +127,58 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  imageContainer: {
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  image: {
+    width: '80%',
+    height: 180,
+  },
   content: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center',
+    paddingTop: 0,
+    justifyContent: 'flex-start',
   },
   header: {
-    marginBottom: 30,
+    marginBottom: 20,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
-    marginBottom: 30,
-  },
-  form: {
     marginBottom: 20,
   },
-  inputContainer: {
+  form: {
     marginBottom: 15,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
+  inputContainer: {
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 15,
+    padding: 14,
+    borderRadius: 12,
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
   },
   buttonText: {
-    color: '#fff',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',
   },
   footer: {
-    marginTop: 20,
+    marginTop: 15,
     flexDirection: 'row',
     justifyContent: 'center',
   },
@@ -189,24 +186,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   linkText: {
-    color: '#007AFF',
-    textAlign: 'center',
     fontSize: 16,
-  },
-  testButton: {
-    backgroundColor: '#34C759',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 30,
-  },
-  testButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 14,
     fontWeight: '600',
   },
   forgotPasswordContainer: {
-    marginTop: 15,
+    marginTop: 12,
     alignItems: 'center',
   },
 }); 
